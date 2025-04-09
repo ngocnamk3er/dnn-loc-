@@ -1,0 +1,5 @@
+REPORT_PATH = "./data/Tomcat.txt"
+REPO_URL = "https://github.com/apache/tomcat"
+SOURCE_PATH = "./data/tomcat-7.0.51/"
+CLONE_FOLDER_PATH="./data/"
+FEATURE_PATH = "./data/Tomcat_features.csv"

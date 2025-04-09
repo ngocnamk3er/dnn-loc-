@@ -17,7 +17,7 @@ from nltk.tokenize import word_tokenize
 from nltk.stem import PorterStemmer
 from nltk.corpus import stopwords
 from sklearn.feature_extraction.text import TfidfVectorizer
-
+from constant import *
 
 def git_clone(repo_url, clone_folder):
     """ Clones the git repo from 'repo_ur' into 'clone_folder'
@@ -48,9 +48,9 @@ def tsv2dict(tsv_path):
     dict_list = []
     for line in reader:
         line["files"] = [
-            os.path.normpath(f[8:])
+            os.path.normpath(f)
             for f in line["files"].strip().split()
-            if f.startswith("bundles/") and f.endswith(".java")
+            if f.endswith(".java")
         ]
         line["raw_text"] = line["summary"] + line["description"]
         # line["summary"] = clean_and_split(line["summary"][11:])
@@ -104,8 +104,10 @@ def top_k_wrong_files(right_files, br_raw_text, java_files, k=50):
     """
 
     # Randomly sample 2*k files
-    randomly_sampled = random.sample(set(java_files.keys()) - set(right_files), 2 * k)
-
+    # print("Randomly sampling files...")
+    # randomly_sampled = random.sample(set(java_files.keys()) - set(right_files), 2 * k)
+    randomly_sampled = random.sample(list(set(java_files.keys()) - set(right_files)), 2 * k)
+    # print("Randomly sampled files xxxxxxx: ", randomly_sampled)
     all_files = []
     for filename in randomly_sampled:
         try:
@@ -115,11 +117,12 @@ def top_k_wrong_files(right_files, br_raw_text, java_files, k=50):
             cns = class_name_similarity(br_raw_text, src)
 
             all_files.append((filename, rvsm, cns))
-        except:
-            pass
+        except Exception as e:
+            print("Error: ", e)
+            # pass
 
     top_k_files = sorted(all_files, key=lambda x: x[1], reverse=True)[:k]
-
+    # print("Top k files: ", top_k_files)
     return top_k_files
 
 
@@ -307,7 +310,7 @@ def helper_collections(samples, only_rvsm=False):
 
         sample_dict[s["report_id"]].append(temp_dict)
 
-    bug_reports = tsv2dict("../data/Eclipse_Platform_UI.txt")
+    bug_reports = tsv2dict(REPORT_PATH)
     br2files_dict = {}
 
     for bug_report in bug_reports:

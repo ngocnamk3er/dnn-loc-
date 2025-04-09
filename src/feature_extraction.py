@@ -9,7 +9,7 @@ from util import *
 from joblib import Parallel, delayed, cpu_count
 import csv
 import os
-
+from constant import *
 
 def extract(i, br, bug_reports, java_src_dict):
     """ Extracts features for 50 wrong(randomly chosen) files for each
@@ -56,13 +56,16 @@ def extract(i, br, bug_reports, java_src_dict):
             bff = len(prev_reports)
 
             features.append([br_id, java_file, rvsm, cfs, cns, bfr, bff, 1])
+            # print("Top k wrong files: ")
+            top_k_wrong_file = top_k_wrong_files(br_files, br_raw_text, java_src_dict, 10)
 
-            for java_file, rvsm, cns in top_k_wrong_files(
-                br_files, br_raw_text, java_src_dict
-            ):
+            # print("Top k wrong files: ", top_k_wrong_file)
+
+            for java_file, rvsm, cns in top_k_wrong_file:
                 features.append([br_id, java_file, rvsm, cfs, cns, bfr, bff, 0])
 
-        except:
+        except Exception as e:
+            # print("Error: ", e)
             pass
 
     return features
@@ -73,16 +76,20 @@ def extract_features():
     """
     # Clone git repo to a local folder
     git_clone(
-        repo_url="https://github.com/eclipse/eclipse.platform.ui.git",
-        clone_folder="../data/",
+        repo_url=REPO_URL,
+        clone_folder=CLONE_FOLDER_PATH,
     )
 
     # Read bug reports from tab separated file
-    bug_reports = tsv2dict("../data/Eclipse_Platform_UI.txt")
+    bug_reports = tsv2dict(REPORT_PATH)
 
     # Read all java source files
-    java_src_dict = get_all_source_code("../data/eclipse.platform.ui/bundles/")
-
+    java_src_dict = get_all_source_code(SOURCE_PATH)
+    print("Java source code loaded")
+    first_item = next(iter(java_src_dict.items()))
+    print(first_item)       # Kết quả: ('a', 1)
+    print("bug_reports[0]['files']")
+    print(bug_reports[0]['files'])
     # Use all CPUs except one to speed up extraction and avoid computer lagging
     batches = Parallel(n_jobs=cpu_count() - 1)(
         delayed(extract)(i, br, bug_reports, java_src_dict)
@@ -93,7 +100,7 @@ def extract_features():
     features = [row for batch in batches for row in batch]
 
     # Save features to a csv file
-    features_path = os.path.normpath("../data/features.csv")
+    features_path = os.path.normpath(FEATURE_PATH)
     with open(features_path, "w", newline="") as f:
         writer = csv.writer(f)
         writer.writerow(
